@@ -2,6 +2,7 @@ function [features1, features2, features3] = spikePCA(spikeWindows, hCfg)
     %SPIKEPCA Project spikes onto their principal components
     % if strcmpi(hCfg.vcFet, 'pca')
     prVecs = spikePrVecs(spikeWindows, hCfg);
+    
     % else
     %     mrPv_global = get0_('mrPv_global');
     %     if isempty(mrPv_global)
@@ -12,7 +13,6 @@ function [features1, features2, features3] = spikePCA(spikeWindows, hCfg)
 
     %     prVecs = mrPv_global;
     % end
-
     [features1, features2, features3] = projectInterp(spikeWindows, prVecs, hCfg);
 end
 
@@ -24,8 +24,9 @@ function [prVecs, eigVals] = spikePrVecs(spikeWindows, hCfg)
     % subsample spikes on their primary sites up to MAX_SAMPLE
     ss = jrclust.utils.subsample(1:size(spikeWindows, 2), MAX_SAMPLE);
     spikeSample = spikeWindows(:, ss, 1);
-
-    covMat = (spikeSample*spikeSample')/(numel(ss)-1);
+    
+    x = max(numel(ss)-1, 1);
+    covMat = (spikeSample*spikeSample')/x;
 
     [eigVecs, eigVals] = eig(covMat);
     % MATLAB returns value-vector pairs smallest to largest; flip them

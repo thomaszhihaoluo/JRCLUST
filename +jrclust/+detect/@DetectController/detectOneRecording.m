@@ -185,7 +185,17 @@ function recData = detectOneRecording(obj, hRec, fids, impTimes, impSites, siteT
 
         % find peaks: adds spikeAmps, updates spikeTimes, spikeSites,
         %             siteThresh
-        loadData = obj.findPeaks(loadData);
+        % ---------------------------------
+        % Thomas 2019-10-12
+        if sum(inInterval) > 0 || isempty(impTimes) 
+            loadData = obj.findPeaks(loadData);
+        else
+            loadData.spikeTimes = [];
+        end
+        if numel(loadData.spikeTimes) ~= sum(inInterval)
+            keyboard
+        end
+        % ---------------------------------
         if ~isempty(loadData.spikeTimes)
             recData.spikeAmps = cat(1, recData.spikeAmps, loadData.spikeAmps);
             recData.spikeSites = cat(1, recData.spikeSites, loadData.spikeSites);
