@@ -10,8 +10,12 @@ function prVecs = getPVSamples(samplesIn)
     % compute eigenvectors of covariance matrix
     nSamples = size(samplesIn, 2);
     covMat = (samplesIn*samplesIn')/(nSamples-1);
-    [eigVecs, ~] = eig(covMat);
+    if size(samplesIn,2) < 3
+        prVecs = nan(size(samplesIn,1), 3);
+    else
+        [eigVecs, ~] = eig(covMat);
 
-    % eigenvectors corresponding to 3 largest eigenvalues
-    prVecs = eigVecs(:, end:-1:end-2);
+        % eigenvectors corresponding to 3 largest eigenvalues
+        prVecs = eigVecs(:, end:-1:end-2);
+    end
 end

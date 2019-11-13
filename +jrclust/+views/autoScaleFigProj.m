@@ -22,6 +22,7 @@ function autoScaleFigProj(hFigProj, hClust, selected)
     else
         projScale = max(cellfun(@(x) quantile(abs(x(:)), autoscalePct), projData));
     end
-
-    jrclust.views.rescaleFigProj(hFigProj, projScale, hCfg);
+    if ~isnan(projScale)
+        jrclust.views.rescaleFigProj(hFigProj, projScale, hCfg);
+    end
 end

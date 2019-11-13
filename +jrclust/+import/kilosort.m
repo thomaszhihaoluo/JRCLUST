@@ -220,7 +220,7 @@ function [hCfg, res] = kilosort(loadPath)
     %%% detect and extract spikes/features
     hDetect = jrclust.detect.DetectController(hCfg, spikeTimes, spikeSites);
     dRes = hDetect.detect();
-    dRes.spikeSites = spikeSites;
+%     dRes.spikeSites = spikeSites;
     sRes = struct('spikeClusters', spikeClusters, ...
                   'spikeTemplates', spikeTemplates, ...
                   'simScore', simScore, ...
@@ -229,7 +229,8 @@ function [hCfg, res] = kilosort(loadPath)
                   'templateFeatureInd', iNeigh, ...
                   'pcFeatures', cProjPC, ...
                   'pcFeatureInd', iNeighPC);
-
+    [dRes, sRes] = jrclust.utils.removePervasiveSpikes(dRes, sRes, hCfg.nSites); % Thomas Zhihao Luo
+              
     hClust = jrclust.sort.TemplateClustering(hCfg, sRes, dRes);
 
     res = jrclust.utils.mergeStructs(dRes, sRes);

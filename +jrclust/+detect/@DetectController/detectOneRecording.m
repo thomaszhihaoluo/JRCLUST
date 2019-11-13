@@ -22,7 +22,8 @@ function recData = detectOneRecording(obj, hRec, fids, impTimes, impSites, siteT
                      'filtShape', [diff(obj.hCfg.evtWindowSamp) + 1, size(obj.hCfg.siteNeighbors, 1), 0], ...
                      'spikesFilt2', zeros(diff(obj.hCfg.evtWindowSamp) + 1, size(obj.hCfg.siteNeighbors, 1), 0), ...
                      'spikesFilt3', zeros(diff(obj.hCfg.evtWindowSamp) + 1, size(obj.hCfg.siteNeighbors, 1), 0), ...
-                     'spikeFeatures', []);
+                     'spikeFeatures', [], ...
+                     'isPervasive', []);
 
     % divide recording into many loads, samples are columns in data matrix
     [nLoads, nSamplesLoad, nSamplesFinal] = obj.planLoad(hRec);
@@ -75,7 +76,7 @@ function recData = detectOneRecording(obj, hRec, fids, impTimes, impSites, siteT
                 obj.hCfg.useGPU = 0;
                 iSamplesFilt = jrclust.filters.filtCAR(iSamplesRaw, [], [], 0, obj.hCfg);
             end
-%             iSamplesFilt = obj.filterSamples(iSamplesRaw, samplesPre, samplesPost);
+            iSamplesFilt = obj.filterSamples(iSamplesRaw, samplesPre, samplesPost);
             obj.hCfg.updateLog('filtSamples', 'Finished filtering spikes', 0, 1);
 
             siteThresh = cat(1, siteThresh, obj.computeThreshold(iSamplesFilt));
@@ -158,6 +159,7 @@ function recData = detectOneRecording(obj, hRec, fids, impTimes, impSites, siteT
             % denoise and filter samples
             obj.hCfg.updateLog('filtSamples', 'Filtering samples', 1, 0);
             [iSamplesFilt, keepMe] = obj.filterSamples(iSamplesRaw, samplesPre, samplesPost);
+            % ------ 
             obj.hCfg.updateLog('filtSamples', 'Finished filtering samples', 0, 1);
         end
 
@@ -185,18 +187,23 @@ function recData = detectOneRecording(obj, hRec, fids, impTimes, impSites, siteT
 
         % find peaks: adds spikeAmps, updates spikeTimes, spikeSites,
         %             siteThresh
-        % ---------------------------------
-        % Thomas 2019-10-12
         if sum(inInterval) > 0 || isempty(impTimes) 
             loadData = obj.findPeaks(loadData);
         else
             loadData.spikeTimes = [];
         end
-        if numel(loadData.spikeTimes) ~= sum(inInterval)
-            keyboard
-        end
-        % ---------------------------------
         if ~isempty(loadData.spikeTimes)
+            % #THOMAS TODO create a n_spike by n_site single matrix
+            % indicating the maximum deflection of that spike at that site.
+            % or a matrix indicating whether the spike that exceeded a
+            % particular thresoldat that site. 
+            if ~isempty(obj.hCfg.getOr('n_sites_max', []))
+                obj.hCfg.updateLog('identifyPervasive', 'Identifying pervasive spikes', 1, 0);
+                loadData = obj.findPervasive(loadData);  
+                recData.isPervasive = cat(1, recData.isPervasive, loadData.isPervasive);
+                obj.hCfg.updateLog('identifyPervasive', sprintf('Identified %i pervasive spikes', sum(loadData.isPervasive)), 0, 1);
+            end 
+            
             recData.spikeAmps = cat(1, recData.spikeAmps, loadData.spikeAmps);
             recData.spikeSites = cat(1, recData.spikeSites, loadData.spikeSites);
             recData.siteThresh = [recData.siteThresh, loadData.siteThresh];
@@ -230,7 +237,7 @@ function recData = detectOneRecording(obj, hRec, fids, impTimes, impSites, siteT
                 recData.spikeFeatures = cat(3, recData.spikeFeatures, loadData.spikeFeatures);
             end
         end
-
+        
         if iLoad < nLoads
             samplesPre = iSamplesRaw(end-obj.hCfg.nSamplesPad+1:end, :);
         end

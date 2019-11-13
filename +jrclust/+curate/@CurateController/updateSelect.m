@@ -37,7 +37,9 @@ function updateSelect(obj, iClusters)
     obj.updateFigPos();
     obj.updateFigProj(1);
     obj.updateFigTime(1);
-    obj.updateFigPSTH(0);
+    if sum(obj.hClust.spikeClusters == obj.selected) >2
+        obj.updateFigPSTH(0);
+    end
 
     % update cursors
     obj.updateCursorFigWav();

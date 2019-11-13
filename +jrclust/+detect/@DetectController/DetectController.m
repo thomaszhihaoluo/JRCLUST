@@ -49,5 +49,6 @@ classdef DetectController < handle
         [windows, timeRanges] = extractWindows(obj, samplesIn, spTimes, spSites, fRaw);
         [spikeSites2, spikeSites3] = findSecondaryPeaks(obj, spikeWindows, spikeSites);
         spikeWindows = samplesToWindows2(obj, samplesIn, spikeSites, spikeTimes);
+        isPervasive = findPervasive(obj, spikeData);
     end
 end

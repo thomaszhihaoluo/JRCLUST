@@ -27,7 +27,8 @@ function res = detect(obj)
                  'filtShape', [], ...
                  'spikesFilt2', [], ...
                  'spikesFilt3', [], ...
-                 'spikeFeatures', []);
+                 'spikeFeatures', [], ...
+                 'isPervasive', []);
 
     recOffset = 0; % sample offset for each recording in sequence
 
@@ -92,6 +93,9 @@ function res = detect(obj)
         else
             res.filtShape(3) = res.filtShape(3) + recData.filtShape(3);
         end
+        
+        % update identity of pervasive spikes
+        res.isPervasive = cat(1, res.isPervasive, recData.isPervasive);
 
         recOffset = recOffset + hRec.nSamples;
         hRecs{iRec} = hRec;
