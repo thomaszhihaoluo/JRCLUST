@@ -178,21 +178,25 @@ function plot_raster_clu_(clusterTimes, trialTimes, hCfg, hAx, color, idx)
 end
 
 function plot_psth_clu_(clusterTimes, trialTimes, hCfg, hAx, vcColor)
+    trialTimes = trialTimes(~isnan(trialTimes));
     tbin = hCfg.psthTimeBin;
-    nbin = round(tbin * hCfg.sampleRate);
+%     nbin = round(tbin * hCfg.sampleRate);
     nlim = round(hCfg.psthTimeLimits/tbin);
-    viTime_Trial = round(trialTimes / tbin);
-
-    vlTime1 = zeros(0);
-    vlTime1(ceil(double(clusterTimes)/nbin)) = 1;
-    mr1 = vr2mr2_(double(vlTime1), viTime_Trial, nlim);
-    vnRate = mean(mr1,2) / tbin;
-    vrTimePlot = (nlim(1):nlim(end))*tbin + tbin/2;
+%     viTime_Trial = round(trialTimes / tbin);
+%     vlTime1 = zeros(0);
+%     vlTime1(ceil(double(clusterTimes)/nbin)) = 1;
+%     mr1 = vr2mr2_(double(vlTime1), viTime_Trial, nlim);
+%     vnRate = mean(mr1,2) / tbin;
+%     vrTimePlot = (nlim(1):nlim(end))*tbin + tbin/2;
+    bin_edges = (nlim(1):nlim(end))*tbin;
+    clusterTimes = double(clusterTimes)/hCfg.sampleRate;
+    [vnRate, vrTimePlot] = bin_spike_times(clusterTimes, trialTimes, bin_edges);
     plot(hAx, vrTimePlot, vnRate, 'color', vcColor);
     vrXTick = hCfg.psthTimeLimits(1):(hCfg.psthXTick):hCfg.psthTimeLimits(2);
-    set(hAx, 'XTick', vrXTick, 'XTickLabel', []);
+    set(hAx, 'XTick', vrXTick, 'XTickLabel', [], ...
+            'Nextplot', 'add')
     grid(hAx, 'on');
-    hold(hAx, 'on');
+%     hold(hAx, 'on');
     plot(hAx, [0 0], get(hAx, 'YLim'), 'r-');
     ylabel(hAx, 'Rate (Hz)');
     xlim(hAx, hCfg.psthTimeLimits);
@@ -215,4 +219,18 @@ function mr = vr2mr2_(vr, viRow, spkLim, viCol)
     else
         mr = vr(miRange, viCol); %matrix passed to save time
     end
+end
+function [spike_rate, bin_centers] = bin_spike_times(spike_times, reference_times, bin_edges)
+    % Thomas Luo
+    % 2018-10-04
+    spike_times = spike_times(:);
+    reference_times = reference_times(:)';
+    bin_edges = sort(bin_edges);
+    bin_centers = bin_edges(1:end-1) + diff(bin_edges)/2;
+    % prune the spikes that are not near REFERENCE_TIMES
+    rel_spk_times = spike_times - reference_times;
+    is_near_ref = rel_spk_times >= bin_edges(1) & rel_spk_times < bin_edges(end);
+    rel_spk_times = rel_spk_times(is_near_ref); % if a spike is close to multiple ref times, it's counted mult. times
+    spike_counts = sum(rel_spk_times >= bin_edges(1:end-1) & rel_spk_times < bin_edges(2:end),1);
+    spike_rate = spike_counts / numel(reference_times) ./ diff(bin_edges);
 end

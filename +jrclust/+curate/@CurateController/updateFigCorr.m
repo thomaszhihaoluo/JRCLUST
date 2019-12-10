@@ -18,8 +18,8 @@ function hFigCorr = plotFigCorr(hFigCorr, hClust, hCfg, selected)
         jCluster = selected(2);
     end
 
-    jitterMs = 0.5; % bin size for correlation plot
-    nLagsMs = 25; % show 25 msec
+    jitterMs = 1; % bin size for correlation plot
+    nLagsMs = 10; % show 25 msec
 
     jitterSamp = round(jitterMs*hCfg.sampleRate/1000); % 0.5 ms
     nLags = round(nLagsMs/jitterMs);
@@ -32,7 +32,7 @@ function hFigCorr = plotFigCorr(hFigCorr, hClust, hCfg, selected)
     jTimes = int32(double(hClust.spikeTimes(hClust.spikesByCluster{jCluster}))/jitterSamp);
 
     % count agreements of jTimes + lag with iTimes
-    lagSamp = -nLags:nLags;
+    lagSamp = [-nLags:-1, 1:nLags];
     intCount = zeros(size(lagSamp));
     for iLag = 1:numel(lagSamp)
         if iCluster == jCluster && lagSamp(iLag)==0
@@ -42,6 +42,8 @@ function hFigCorr = plotFigCorr(hFigCorr, hClust, hCfg, selected)
     end
 
     lagTime = lagSamp*jitterMs;
+    lagTime(lagTime< 0) = lagTime(lagTime< 0)+0.5;
+    lagTime(lagTime>0) = lagTime(lagTime> 0)-0.5;
 
     % draw the plot
     if ~hFigCorr.hasAxes('default')
@@ -53,6 +55,14 @@ function hFigCorr = plotFigCorr(hFigCorr, hClust, hCfg, selected)
         hFigCorr.axApply('default', @set, 'YScale', 'log');
     else
         hFigCorr.updatePlot('hBar', lagTime, intCount);
+        hFigCorr.axApply('default', @set, 'YScale', 'log');
+        y_max = 10^ceil(log10(max(intCount)));
+        y_max = max(y_max, 1);
+        hFigCorr.axApply('default', @set, 'YLim', [0.1, y_max], ...
+                                          'YTick', [0.1, 10.^(0:log10(y_max))], ...
+                                          'yticklabel', [{'0'}, cellfun(@num2str, num2cell(10.^(0:log10(y_max))), 'uni', 0)])
+        hFigCorr.axApply('default', @set, 'Xtick', -nLagsMs:jitterMs:nLagsMs);
+        hFigCorr.axApply('default', @grid, 'on');
     end
 
     hFigCorr.axApply('default', @title, sprintf('Cluster %d vs. Cluster %d', iCluster, jCluster));

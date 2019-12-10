@@ -193,16 +193,15 @@ function recData = detectOneRecording(obj, hRec, fids, impTimes, impSites, siteT
             loadData.spikeTimes = [];
         end
         if ~isempty(loadData.spikeTimes)
-            % #THOMAS TODO create a n_spike by n_site single matrix
-            % indicating the maximum deflection of that spike at that site.
-            % or a matrix indicating whether the spike that exceeded a
-            % particular thresoldat that site. 
+            % #THOMAS - remove pervasive spikes (putative artifacts)
             if ~isempty(obj.hCfg.getOr('n_sites_max', []))
                 obj.hCfg.updateLog('identifyPervasive', 'Identifying pervasive spikes', 1, 0);
                 loadData = obj.findPervasive(loadData);  
                 recData.isPervasive = cat(1, recData.isPervasive, loadData.isPervasive);
                 obj.hCfg.updateLog('identifyPervasive', sprintf('Identified %i pervasive spikes', sum(loadData.isPervasive)), 0, 1);
             end 
+            % #THOMAS remove double counted spikes
+%             loadData = obj.removeRedundant(loadData);  
             
             recData.spikeAmps = cat(1, recData.spikeAmps, loadData.spikeAmps);
             recData.spikeSites = cat(1, recData.spikeSites, loadData.spikeSites);
