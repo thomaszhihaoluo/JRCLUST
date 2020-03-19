@@ -139,10 +139,11 @@ function [hCfg, res] = kilosort(loadPath)
                         num2str(hCfg.bitScaling), ...
                         num2str(hCfg.headerOffset), ...
                         hCfg.dataType};
-        dlgAns = inputdlg(dlgFieldNames, 'Does this look correct?', 1, dlgFieldVals, struct('Resize', 'on', 'Interpreter', 'tex'));
-        if isempty(dlgAns)
-            return;
-        end
+%         dlgAns = inputdlg(dlgFieldNames, 'Does this look correct?', 1, dlgFieldVals, struct('Resize', 'on', 'Interpreter', 'tex'));
+%         if isempty(dlgAns)
+%             return;
+%         end
+        dlgAns = dlgFieldVals(:);
 
         try
             if ~exist(dlgAns{1}, 'file')

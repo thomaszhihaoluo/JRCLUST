@@ -112,7 +112,7 @@ function trialTimes = loadTrialFile(trialFile)
             end
         end
     catch ME
-        warning('Could not load trialFile %s: %s', trialFile, ME.message);
+%         warning('Could not load trialFile %s: %s', trialFile, ME.message);
     end
 end
 

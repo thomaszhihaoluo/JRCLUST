@@ -80,7 +80,7 @@ function hFigTime = plotFigTime(hFigTime, hClust, hCfg, selected, maxAmp, iSite)
             linehandle = line(ax,repmat(trialTimes{1}(:,1),1,2),yl,'linewidth',0.1,'color',[0 1 0]);
             set(ax,'ylim',yl);
         else
-           warndlg('Could not load trial times.'); 
+%            warndlg('Could not load trial times.'); 
         end
     end              
 end

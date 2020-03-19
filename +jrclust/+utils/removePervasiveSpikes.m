@@ -1,28 +1,8 @@
 function [dRes, sRes] = removePervasiveSpikes(dRes, sRes, nSites)
-% if size(dRes.centerSites, 2) > 0
-%     dRes.spikeSites = dRes.centerSites(:, 1);
-%     dRes.spikesBySite = arrayfun(@(iSite) find(dRes.centerSites(:, 1) == iSite), 1:nSites, 'UniformOutput', 0);
-% else
-%     dRes.spikeSites = [];
-%     dRes.spikesBySite = cell(1, nSites);
-% end
-% if size(dRes.centerSites, 2) > 1
-%     dRes.spikeSites2 = dRes.centerSites(:, 2);
-%     dRes.spikesBySite2 = arrayfun(@(iSite) find(dRes.centerSites(:, 2) == iSite), 1:nSites, 'UniformOutput', 0);
-% else
-%     dRes.spikeSites2 = [];
-%     dRes.spikesBySite2 = cell(1, nSites);
-% end
-% 
-% if size(dRes.centerSites, 2) > 2
-%     dRes.spikeSites3 = dRes.centerSites(:, 3);
-%     dRes.spikesBySite3 = arrayfun(@(iSite) find(dRes.centerSites(:, 3) == iSite), 1:nSites, 'UniformOutput', 0);
-% else
-%     dRes.spikeSites3 = [];
-%     dRes.spikesBySite3 = cell(1, nSites);
-% end
-% dRes.spikePositions = dRes.spikePositions(~dRes.isPervasive, :);
 %%
+if isempty(dRes.isPervasive)
+    return
+end
 sRes.spikeClusters = sRes.spikeClusters(~dRes.isPervasive,1);
 sRes.spikeTemplates = sRes.spikeTemplates(~dRes.isPervasive,1);
 sRes.amplitudes = sRes.amplitudes(~dRes.isPervasive,1);
