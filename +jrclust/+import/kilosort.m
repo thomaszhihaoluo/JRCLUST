@@ -1,4 +1,4 @@
-function [hCfg, res] = kilosort(loadPath)
+function [hCfg, res] = kilosort(loadPath, check_flag)
     %KILOSORT Import a Kilosort session from NPY files
     [hCfg, res] = deal([]);
 
@@ -139,11 +139,15 @@ function [hCfg, res] = kilosort(loadPath)
                         num2str(hCfg.bitScaling), ...
                         num2str(hCfg.headerOffset), ...
                         hCfg.dataType};
-%         dlgAns = inputdlg(dlgFieldNames, 'Does this look correct?', 1, dlgFieldVals, struct('Resize', 'on', 'Interpreter', 'tex'));
-%         if isempty(dlgAns)
-%             return;
-%         end
-        dlgAns = dlgFieldVals(:);
+                    
+        if nargin < 2 || check_flag
+            dlgAns = inputdlg(dlgFieldNames, 'Does this look correct?', 1, dlgFieldVals, struct('Resize', 'on', 'Interpreter', 'tex'));
+            if isempty(dlgAns)
+                return;
+            end
+        else
+            dlgAns = dlgFieldVals(:);
+        end
 
         try
             if ~exist(dlgAns{1}, 'file')

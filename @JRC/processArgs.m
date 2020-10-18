@@ -23,15 +23,15 @@ function processArgs(obj)
         % arg 1 need not be a config file
         [~, ~, ext] = fileparts(configFile);
         if strcmpi(ext, '.prm')
-            try
+%             try
                 obj.hCfg = jrclust.Config(configFile);
                 % save imported config file
                 if obj.hCfg.isV3Import
                     obj.hCfg.save();
                 end
-            catch ME
-                warning('Failed to load %s: %s', configFile, ME.message);
-            end
+%             catch ME
+%                 warning('Failed to load %s: %s', configFile, ME.message);
+%             end
         end
     end
 
@@ -145,7 +145,7 @@ function processArgs(obj)
             end
 
         case 'import-ksort'
-            [hCfg_, res_] = jrclust.import.kilosort(obj.args{1});
+            [hCfg_, res_] = jrclust.import.kilosort(obj.args{1:2});
             if isempty(hCfg_)
                 obj.error('Import failed');
             else
