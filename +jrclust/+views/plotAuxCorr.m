@@ -33,7 +33,7 @@ function corrData = plotAuxCorr(hClust, selected)
 
     for iiCluster = 1:nClustersShow
         iCluster = argsort(iiCluster);
-        hTab = uitab(hTabGroup, 'Title', sprintf('Cluster %d', iCluster), 'BackgroundColor', 'w');
+        hTab = uitab(hTabGroup, 'Title', sprintf('Unit %d', iCluster), 'BackgroundColor', 'w');
         axes('Parent', hTab);
         subplot(2, 1, 1);
 
@@ -44,7 +44,7 @@ function corrData = plotAuxCorr(hClust, selected)
         ylabel(hAx(2), auxLabel);
 
         iSite = hClust.clusterSites(iCluster);
-        iTitle = sprintf('Cluster %d (Site %d, Chan %d): Corr=%0.3f', iCluster, iSite, hCfg.siteMap(iSite), auxChanCorr(iCluster));
+        iTitle = sprintf('Unit %d (Site %d, Chan %d): Corr=%0.3f', iCluster, iSite, hCfg.siteMap(iSite), auxChanCorr(iCluster));
         title(iTitle);
         set(hAx, 'XLim', auxTimes([1,end]));
         grid on;
@@ -107,12 +107,33 @@ function [auxSamples, auxTimes] = loadAuxChannel(hCfg)
             auxRate = hCfg.getOr('auxRate', hCfg.sampleRate);
         case {'.dat', '.bin'}
             if isempty(hCfg.auxChan)
-                return;
+                try % ask where it is 
+                    hCfg.auxFile = fullfile(hCfg.outputDir,uigetfile({'*.mat;*.csv'},...
+                    'Select the Aux file',hCfg.outputDir));
+                catch
+                    return;
+                end
             end
-
-            hRec = jrclust.detect.newRecording(hCfg.auxFile, hCfg);
-            auxSamples = single(hRec.readRawROI(hCfg.auxChan, 1:hRec.nSamples))*hCfg.bitScaling*hCfg.auxScale;
-            auxRate = hCfg.getOr('auxRate', hCfg.sampleRate);
+            try
+                hRec = jrclust.detect.newRecording(hCfg.auxFile, hCfg);
+                auxSamples = single(hRec.readRawROI(hCfg.auxChan, 1:hRec.nSamples))*hCfg.bitScaling*hCfg.auxScale;
+                auxRate = hCfg.getOr('auxRate', hCfg.sampleRate);
+            catch % data not from SpikeGLX
+                auxData = load(hCfg.auxFile); %load .mat file containing Aux data 
+                auxDataFields = fieldnames(auxData);
+                auxRateFieldIdx= ~cellfun(@isempty, cellfun(@(fn) strfind(fn,'Rate') |...
+                    strfind(fn,'sampling'), auxDataFields,'UniformOutput', false));
+                if any(auxRateFieldIdx) %there's a sampling rate field 
+                    auxSamples = auxData.(auxDataFields{~auxRateFieldIdx});
+                    auxRate = auxData.(auxDataFields{auxRateFieldIdx});
+                else %load as usual 
+                    auxSamples = auxData.(auxDataFields{1});
+                    auxRate = hCfg.getOr('auxRate', hCfg.sampleRate);
+                end
+            end
+        case '.csv'
+                auxSamples = load(hCfg.auxFile);
+                auxRate = hCfg.getOr('auxRate', hCfg.sampleRate);
         otherwise
             jrclust.utils.qMsgBox(sprintf('hCfg.auxFile: unsupported file format: %s\n', auxExt));
         return;

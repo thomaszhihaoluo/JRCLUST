@@ -9,7 +9,7 @@ end
 
 %% LOCAL FUNCTIONS
 function hFigHist = plotFigHist(hFigHist, hClust, hCfg, selected)
-    %DOPLOTFIGHIST Plot ISI histogram
+    %PLOTFIGHIST Plot ISI histogram
     if numel(selected) == 1
         iCluster = selected(1);
         jCluster = iCluster;
@@ -20,7 +20,7 @@ function hFigHist = plotFigHist(hFigHist, hClust, hCfg, selected)
 
     nBinsHist = 50; %TODO: put this in param file (maybe)
 
-    XData = logspace(0, 4, nBinsHist);
+    XData = logspace(-1, 4, nBinsHist); % logarithmic scale from 0.1ms to 10s
     YData1 = getISIHistogram(iCluster, XData, hClust, hCfg);
 
     % draw the plot
@@ -28,7 +28,7 @@ function hFigHist = plotFigHist(hFigHist, hClust, hCfg, selected)
         hFigHist.addAxes('default');
         hFigHist.addPlot('hPlot1', @stairs, nan, nan, 'Color', hCfg.colorMap(2, :));
         hFigHist.addPlot('hPlot2', @stairs, nan, nan, 'Color', hCfg.colorMap(3, :));
-        hFigHist.axApply('default', @set, 'XLim', [1 10000], 'XScale', 'log'); % ms
+        hFigHist.axApply('default', @set, 'XLim', [min(XData) max(XData)], 'XScale', 'log'); % ms
         hFigHist.axApply('default', @grid, 'on');
         hFigHist.axApply('default', @xlabel, 'ISI (ms)');
         hFigHist.axApply('default', @ylabel, 'Prob. Density');
@@ -38,10 +38,10 @@ function hFigHist = plotFigHist(hFigHist, hClust, hCfg, selected)
 
     if iCluster ~= jCluster
         YData2 = getISIHistogram(jCluster, XData, hClust, hCfg);
-        hFigHist.axApply('default', @title, sprintf('Cluster %d (black) vs. %d (red)', iCluster, jCluster));
+        hFigHist.axApply('default', @title, sprintf('Unit %d (black) vs. Unit %d (red)', iCluster, jCluster));
         hFigHist.updatePlot('hPlot2', XData, YData2);
     else
-        hFigHist.axApply('default', @title, sprintf('Cluster %d', iCluster));
+        hFigHist.axApply('default', @title, sprintf('Unit %d', iCluster));
         hFigHist.clearPlot('hPlot2');
     end
 end

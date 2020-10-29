@@ -2,40 +2,45 @@ function syncHistFile(obj)
     %SYNCHISTFILE Sync up history file with current history
     d = dir(obj.hCfg.histFile);
 
-    nSpikes = numel(obj.spikeClusters);
-    if isempty(d) || nSpikes == 0 % file does not exist
+    if isempty(d) || obj.nSpikes == 0 % file does not exist
         fclose(fopen(obj.hCfg.histFile, 'w')); % truncate history file
         d = dir(obj.hCfg.histFile);
     end
 
-    if nSpikes == 0
+    if obj.nSpikes == 0
         return;
     end
 
-    nEntries = d.bytes / 4 / (nSpikes + 1); % int32 spike table plus header
+    nEntries = d.bytes / 4 / (obj.nSpikes + 1); % int32 spike table plus header
 
     if nEntries ~= ceil(nEntries) % non-integer number of "entries", likely corrupt file
         obj.history = resetHistFile(obj.hCfg.histFile, obj.initialClustering, obj.spikeClusters, obj.nEdits);
     elseif nEntries > obj.nEdits % more edits in file than in stored history, pare file down to match history
-        keepMe = int32([]);
-        fidHist = fopen(obj.hCfg.histFile, 'r');
-
-        % read in history to save...
-        checkInt = fread(fidHist, 1, 'int32');
-        while ~isempty(checkInt)
-            if isKey(obj.history, checkInt)
-                keepMe = [keepMe; checkInt; fread(fidHist, nSpikes, 'int32')];
+        keepMe = cell2mat(keys(obj.history));
+        try
+            mm = memmapfile(obj.hCfg.histFile, 'Format', {'int32', [obj.nSpikes + 1 nEntries], 'Data'}, 'Writable', true);
+            editKeys = mm.Data.Data(1, :);
+        catch ME
+            if ispc
+               %% hack for getting around windows path length limitation
+               tmp=['\\?\',obj.hCfg.histFile];
+               mm = memmapfile(tmp, 'Format', {'int32', [obj.nSpikes + 1 nEntries], 'Data'}, 'Writable', true);
+               editKeys = mm.Data.Data(1, :);
             else
-                fseek(fidHist, 4*nSpikes, 'cof');
+               rethrow(ME);
             end
-            checkInt = fread(fidHist, 1, 'int32');
         end
-        fclose(fidHist);
+        iKeepMe = ismember(editKeys, keepMe);
 
-        % ...and flush it back out to the hist file
-        fidHist = fopen(obj.hCfg.histFile, 'w');
-        fwrite(fidHist, keepMe, 'int32');
-        fclose(fidHist);
+        if ~jrclust.utils.isEqual(find(iKeepMe), 1:sum(iKeepMe))
+            % take the subset of entries we want to keep...
+            mm.Data.Data(:, 1:obj.nEdits) = mm.Data.Data(:, iKeepMe);
+        end
+
+        clear mm; % flush changes and close
+
+        % ...and truncate the file after this
+        java.io.RandomAccessFile(obj.hCfg.histFile, 'rw').setLength(4 * obj.nEdits * (obj.nSpikes + 1));
     elseif nEntries < obj.nEdits % more edits in stored history than in file, consolidate edits
         obj.history = resetHistFile(obj.hCfg.histFile, obj.initialClustering, obj.spikeClusters, obj.nEdits);
     elseif nEntries > 0
@@ -49,7 +54,7 @@ function syncHistFile(obj)
             elseif ~isKey(obj.history, checkInt)
                 break;
             end
-            fRes = fseek(fidHist, 4*nSpikes, 'cof');
+            fRes = fseek(fidHist, 4*obj.nSpikes, 'cof');
         end
         fclose(fidHist);
 
@@ -78,6 +83,6 @@ function history = resetHistFile(histFile, initialClustering, spikeClusters, nEd
             fwrite(fidHist, int32(spikeClusters), 'int32');
         end
     end % otherwise truncate file
-    
+
     fclose(fidHist);
 end

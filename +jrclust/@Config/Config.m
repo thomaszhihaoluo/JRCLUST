@@ -103,7 +103,7 @@ classdef Config < dynamicprops
                 if flag
                     obj.setProp(prop.subs, val);
                 else
-                    error(errMsg);
+                    warning('Failed to set a user parameter: %s', errMsg);
                 end
             end
         end
@@ -114,6 +114,7 @@ classdef Config < dynamicprops
         setCustomProp(obj, propname, val);
         setProp(obj, propname, val);
         warning(obj, wmsg, varargin);
+        validateFigs(obj);
     end
 
     %% SECRET METHODS
@@ -318,7 +319,7 @@ classdef Config < dynamicprops
 
                 isFound = ~cellfun(@isempty, mr_);
                 if ~all(isFound)
-                    error('%d/%d files not found', sum(isFound), numel(isFound));
+                    error('Invalid raw file location in param file.');
                 end
             end
 

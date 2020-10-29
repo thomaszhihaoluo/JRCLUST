@@ -12,11 +12,7 @@ function updateFigProj(obj, doAutoscale)
         boundScale = hFigProj.figData.boundScale;
     end
 
-    jrclust.views.plotFigProj(hFigProj, obj.hClust, obj.projSites, obj.selected, boundScale);
-    
-    hFigProj.setMouseable(); % no special mouse function
+    jrclust.views.plotFigProj(hFigProj, obj.hClust, obj.projSites, obj.selected, boundScale, obj.channel_idx, doAutoscale);
 
-    if doAutoscale
-        jrclust.views.autoScaleFigProj(hFigProj, obj.hClust, obj.selected);
-    end
+    hFigProj.setMouseable(); % no special mouse function
 end

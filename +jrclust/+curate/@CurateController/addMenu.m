@@ -10,6 +10,7 @@ function addMenu(obj, hFig)
     uimenu(obj.hMenus('FileMenu'), 'Label', 'Save figures as .png', 'Callback', @(hO, hE) obj.saveFigures('.png'));
     uimenu(obj.hMenus('FileMenu'), 'Label', 'Export units to csv', 'Callback', @(hO, hE) obj.hClust.exportToCSV(), 'Separator', 'on');
     uimenu(obj.hMenus('FileMenu'), 'Label', 'Export unit qualities to csv', 'Callback', @(hO, hE) obj.hClust.exportQualityScores());
+    uimenu(obj.hMenus('FileMenu'), 'Label', 'Export hClust to workspace', 'Callback', @(hO, hE) assignin('base', 'hClust', obj.hClust));
     uimenu(obj.hMenus('FileMenu'), 'Label', 'Export all mean unit waveforms to workspace', 'Callback', @(hO, hE) obj.exportMeanWf(1));
     uimenu(obj.hMenus('FileMenu'), 'Label', 'Export selected mean unit waveforms to workspace', 'Callback', @(hO, hE) obj.exportMeanWf(0));
     uimenu(obj.hMenus('FileMenu'), 'Label', 'Export all traces from the selected unit', 'Callback', @(hO, hE) obj.exportTraces());
@@ -30,6 +31,9 @@ function addMenu(obj, hFig)
     uimenu(obj.hMenus('EditMenu'), 'Label', 'Recompute all mean waveforms', 'Callback', @(hO, hE) obj.recomputeWaveforms(1));
     uimenu(obj.hMenus('EditMenu'), 'Label', 'Reorder clusters by center site', 'Callback', @(hO, hE) obj.reorderClusters('clusterSites'), 'Separator', 'on');
     uimenu(obj.hMenus('EditMenu'), 'Label', 'Reorder clusters by centroid', 'Callback', @(hO, hE) obj.reorderClusters('Y + X'));
+    uimenu(obj.hMenus('EditMenu'), 'Label', 'Reorder sites by channel number', 'Callback', @(h0, hE) obj.reorderSites(1:obj.hCfg.nSites),'Separator','on');    
+    uimenu(obj.hMenus('EditMenu'), 'Label', 'Reorder sites by location dimension 1 (X)', 'Callback', @(h0, hE) obj.reorderSites(obj.hCfg.siteLoc(:,1)));
+    uimenu(obj.hMenus('EditMenu'), 'Label', 'Reorder sites by location dimension 2 (Y)', 'Callback', @(h0, hE) obj.reorderSites(obj.hCfg.siteLoc(:,2)));
 
     obj.hMenus('ViewMenu') = uimenu(hFig, 'Label', 'View');
     uimenu(obj.hMenus('ViewMenu'), 'Label', 'Show traces', 'Callback', @(hO, hE) obj.showTraces());
@@ -38,6 +42,9 @@ function addMenu(obj, hFig)
     uimenu(obj.hMenus('ViewMenu'), 'Label', '[W]aveform (toggle)', 'Callback', @(hO, hE) obj.keyPressFigWav([], struct('Key', 'w')));
     uimenu(obj.hMenus('ViewMenu'), 'Label', '[N]umbers (toggle)', 'Callback', @(hO, hE) obj.keyPressFigWav([], struct('Key', 'n')));
     uimenu(obj.hMenus('ViewMenu'), 'Label', 'Show raw waveform', 'Callback', @(hO, hE) obj.toggleRaw(hO), 'Separator', 'on');
+    uimenu(obj.hMenus('ViewMenu'), 'Label', 'Display annotated units only', 'Callback', @(hO, hE) obj.updateSubset(obj.hClust.annotatedOnly), 'Separator', 'on');
+    uimenu(obj.hMenus('ViewMenu'), 'Label', 'Display non-annotated units only', 'Callback', @(hO, hE) obj.updateSubset(setdiff(1:obj.hClust.nClusters, obj.hClust.annotatedOnly)));
+    uimenu(obj.hMenus('ViewMenu'), 'Label', 'Display all units', 'Callback', @(hO, hE) obj.updateSubset(1:obj.hClust.nClusters, 1));
     %uimenu(obj.hMenus('ViewMenu'), 'Label', 'Threshold by sites', 'Callback', @(hO, hE) keyPressFcn_thresh_(hFig, 'n'));
     uimenu(obj.hMenus('ViewMenu'), 'Label', 'Reset window positions', 'Callback', @(hO, hE) obj.resetPositions(), 'Separator', 'on');
     uimenu(obj.hMenus('ViewMenu'), 'Label', 'Show config file', 'Callback', @(hO, hE) obj.hCfg.edit(), 'Separator', 'on');

@@ -23,15 +23,16 @@ function processArgs(obj)
         % arg 1 need not be a config file
         [~, ~, ext] = fileparts(configFile);
         if strcmpi(ext, '.prm')
-%             try
+            try
+                fprintf('Loading config file @ %s\n',configFile);
                 obj.hCfg = jrclust.Config(configFile);
                 % save imported config file
                 if obj.hCfg.isV3Import
                     obj.hCfg.save();
                 end
-%             catch ME
-%                 warning('Failed to load %s: %s', configFile, ME.message);
-%             end
+            catch ME
+                warning('FATAL ERROR IN LOADING PARAM FILE. \nError was: %s\n',ME.message);
+            end
         end
     end
 
@@ -145,7 +146,21 @@ function processArgs(obj)
             end
 
         case 'import-ksort'
-            [hCfg_, res_] = jrclust.import.kilosort(obj.args{1:2});
+            [hCfg_, res_] = jrclust.import.kilosort(obj.args{:});
+            if isempty(hCfg_)
+                obj.error('Import failed');
+            else
+                obj.hCfg = hCfg_;
+                obj.res = res_;
+
+                obj.saveRes();
+                obj.hCfg.save('', 1);
+
+                obj.isCompleted = 1;
+            end
+            
+        case 'import-spyking-circus'
+            [hCfg_, res_] = jrclust.import.spykingcircus(obj.args{1});
             if isempty(hCfg_)
                 obj.error('Import failed');
             else
@@ -158,14 +173,46 @@ function processArgs(obj)
                 obj.isCompleted = 1;
             end
 
+        case 'export-nwb'
+            if isempty(obj.hCfg)
+                obj.error(sprintf('`%s` not found or not a config file', obj.args{1}));
+                return;
+            elseif nargs < 2
+                obj.error('Specify an output file.');
+                return;
+            end
+
+            obj.loadFiles();
+
+            if isempty(obj.hClust)
+                obj.error('Clustering object not found; sort your data first');
+                return;
+            end
+
+            try
+                jrclust.export.nwb(obj.hClust, obj.args{2});
+                obj.isCompleted = 1;
+            catch ME
+                obj.error(ME.message);
+            end
+
         case 'export-phy'
             if isempty(obj.hCfg)
                 obj.error(sprintf('%s not found or not a config file', obj.args{1}));
                 return;
             end
 
+            obj.loadFiles();
+
+            if isempty(obj.hClust)
+                obj.error('Clustering object not found; sort your data first');
+                return;
+            elseif ~isa(obj.hClust, 'jrclust.sort.DensityPeakClustering')
+                error('Phy export not supported for this type of clustering.');
+            end
+
             try
-                jrclust.export.phy(obj.hCfg);
+                jrclust.export.phy(obj.hClust);
                 obj.isCompleted = 1;
             catch ME
                 obj.error(ME.message);

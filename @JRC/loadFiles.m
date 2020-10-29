@@ -5,18 +5,38 @@ function loadFiles(obj)
     end
 
     if ~exist(obj.hCfg.resFile, 'file')
-        warning('%s does not exist', obj.hCfg.resFile);
+        error('%s does not exist', obj.hCfg.resFile);
         return;
     end
 
+    obj.hCfg.updateLog('loadRes', sprintf('Loading %s', obj.hCfg.resFile), 1, 0);
     try
-        obj.hCfg.updateLog('loadRes', sprintf('Loading %s', obj.hCfg.resFile), 1, 0);
         res_ = load(obj.hCfg.resFile);
-        obj.hCfg.updateLog('loadRes', sprintf('Finished loading %s', obj.hCfg.resFile), 0, 1);
     catch ME
-        warning('Failed to load %s: %s', ME.message);
-        return;
+        %% try to some hacks to get around windows path name length limitations, if that is the problem
+        if ispc
+            userDir = char(java.lang.System.getProperty('user.home'));
+            filename_temp = [userDir,filesep,'tmp_jrclust.mat']; 
+            failed = system(sprintf('copy "%s" "%s"',obj.hCfg.resFile,filename_temp));        
+            if ~failed
+                try
+                    res_ = load(filename_temp);
+                    delete(filename_temp);
+                catch
+                    warning('Failed to load %s: %s', ME.message);
+                    return;
+                end
+            else
+                warning('Failed to load %s: %s', ME.message);
+                return;            
+            end  
+        else
+            warning('Failed to load %s: %s', ME.message);
+            return;
+        end
     end
+    obj.hCfg.updateLog('loadRes', sprintf('Finished loading %s', obj.hCfg.resFile), 0, 1);
+
 
     if isfield(res_, 'spikeTimes')
         % load spikesRaw
@@ -90,9 +110,13 @@ function loadFiles(obj)
         elseif isfield(res_, 'spikeTemplates') % create a new TemplateClustering
             hClust = jrclust.sort.TemplateClustering(obj.hCfg);
             fieldNames = fieldnames(res_);
+
+            md = ?jrclust.sort.TemplateClustering;
+            pl = md.PropertyList;
             for i = 1:numel(fieldNames)
                 fn = fieldNames{i};
-                if isprop(hClust, fn)
+                propMetadata = pl(strcmp(fn, {pl.Name}));
+                if isprop(hClust, fn) && ~((propMetadata.Dependent && isempty(propMetadata.SetMethod)))
                     hClust.(fn) = res_.(fn);
                 end
             end
@@ -101,9 +125,13 @@ function loadFiles(obj)
         elseif isfield(res_, 'spikeClusters')
             hClust = jrclust.sort.DensityPeakClustering(obj.hCfg);
             fieldNames = fieldnames(res_);
+
+            md = ?jrclust.sort.DensityPeakClustering;
+            pl = md.PropertyList;
             for i = 1:numel(fieldNames)
                 fn = fieldNames{i};
-                if isprop(hClust, fn)
+                propMetadata = pl(strcmp(fn, {pl.Name}));
+                if isprop(hClust, fn) && ~((propMetadata.Dependent && isempty(propMetadata.SetMethod)))
                     hClust.(fn) = res_.(fn);
                 end
             end
@@ -112,6 +140,30 @@ function loadFiles(obj)
         end
 
         if isfield(res_, 'hClust')
+            if ~isempty(res_.hClust.inconsistentFields()) && obj.hCfg.getOr('autoRecover', 0)
+                flag = res_.hClust.recover(1); % recover inconsistent data if needed
+                successAppend = 'You should look through your data and ensure everything is correct, then save it.';
+                failureAppend = 'You will probably experience problems curating your data.';
+                msg = '';
+                switch flag
+                    case 2
+                        msg = sprintf('Non-contiguous spike table found and corrected. %s', successAppend);
+                        
+                    case 1
+                        msg = sprintf('Inconsistent fields found and corrected. %s', successAppend);
+
+                    case 0
+                        msg = sprintf('Clustering data in an inconsistent state and automatic recovery failed. Please post an issue on the GitHub issue tracker. %s', failureAppend);
+                        
+                    case -1
+                        msg = sprintf('Automatic recovery canceled by the user but the clustering data is still in an inconsistent state. %s', failureAppend);
+                end
+
+                if ~isempty(msg)
+                    jrclust.utils.qMsgBox(msg, 1, 1);
+                end
+            end
+
             res_.hClust.syncHistFile();
         end
 

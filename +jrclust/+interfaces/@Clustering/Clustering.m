@@ -16,8 +16,15 @@ classdef (Abstract) Clustering < handle
         sRes;               % sorting results
     end
 
+    %% DETECTION RESULTS (IMMUTABLE)
+    properties (Dependent, Transient)
+        detectedOn;         % timestamp, when spikes were detected
+        nSpikes;            % number of spikes detected
+    end
+
     %% SORTING DATA (MUTABLE)
     properties (SetObservable)
+        annotatedOnly;      % IDs of units which have annotations
         clusterCentroids;   % centroids of clusters on the probe
         clusterNotes;       % notes on clusters
         clusterSites;       % mode site per cluster
@@ -129,6 +136,23 @@ classdef (Abstract) Clustering < handle
 
     %% GETTERS/SETTERS
     methods
+        % annotatedOnly
+        function val = get.annotatedOnly(obj)
+            val = find(cellfun(@(c) ~isempty(c), obj.clusterNotes));
+        end
+
+        % detectedOn
+        function val = get.detectedOn(obj)
+            if isfield(obj.sRes, 'detectedOn')
+                val = obj.sRes.detectedOn;
+            else
+                val = now();
+            end
+        end
+        function set.detectedOn(obj, val)
+            obj.sRes.detectedOn = val;
+        end
+
         % hCfg
         function set.hCfg(obj, hc)
             failMsg = 'hCfg must be an object of type jrclust.Config';
@@ -151,6 +175,11 @@ classdef (Abstract) Clustering < handle
         % nEdits
         function ne = get.nEdits(obj)
             ne = size(obj.history, 1);
+        end
+
+        % nSpikes
+        function val = get.nSpikes(obj)
+            val = numel(obj.spikeTimes);
         end
 
         % spikeAmps
